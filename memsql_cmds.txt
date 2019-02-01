@@ -1,25 +1,25 @@
 ------------------------------------------------------------------------------------------------------
 -- production
-mysql -h127.0.0.1 -uroot -pve0otWIdmqWz4DKS -P3306 --prompt="memsql> "
+mysql -h127.0.0.1 -uroot -p -P3306 --prompt="memsql> "
 ------------------------------------------------------------------------------------------------------
 
-mysql -h10.238.103.11 -uroot -pve0otWIdmqWz4DKS -P3306 --prompt="memsql> "
+mysql -h10.238.103.11 -uroot -p -P3306 --prompt="memsql> "
 
-mysql -h127.0.0.1 -uroot -peOsRiiMcV4TqF5r2 -P3306 -e"SELECT * FROM INFORMATION_SCHEMA.GLOBAL_VARIABLES WHERE VARIABLE_NAME LIKE '%mem%'"
+mysql -h127.0.0.1 -uroot -p -P3306 -e"SELECT * FROM INFORMATION_SCHEMA.GLOBAL_VARIABLES WHERE VARIABLE_NAME LIKE '%mem%'"
 
-mysql -h127.0.0.1 -uroot -pve0otWIdmqWz4DKS -P3306 -e"SHOW CLUSTER STATUS;" | grep 10.238.103.60
+mysql -h127.0.0.1 -uroot -p -P3306 -e"SHOW CLUSTER STATUS;" | grep 10.238.103.60
 
 ------------------------------------------------------------------------------------------------------
 non-prod
-mysql -h127.0.0.1 -uroot -peOsRiiMcV4TqF5r2 -P3306 --prompt="memsql> "
+mysql -h127.0.0.1 -uroot -p -P3306 --prompt="memsql> "
 ------------------------------------------------------------------------------------------------------
 
-mysql -h127.0.0.1 -uroot -pve0otWIdmqWz4DKS -P3306 -e"SELECT * FROM INFORMATION_SCHEMA.GLOBAL_STATUS WHERE VARIABLE_NAME = 'Alloc_table_memory';"
-mysql -h127.0.0.1 -uroot -peOsRiiMcV4TqF5r2 -P3306 -e"SELECT * FROM INFORMATION_SCHEMA.GLOBAL_STATUS WHERE VARIABLE_NAME = 'Total_server_memory';"
+mysql -h127.0.0.1 -uroot -p -P3306 -e"SELECT * FROM INFORMATION_SCHEMA.GLOBAL_STATUS WHERE VARIABLE_NAME = 'Alloc_table_memory';"
+mysql -h127.0.0.1 -uroot -p -P3306 -e"SELECT * FROM INFORMATION_SCHEMA.GLOBAL_STATUS WHERE VARIABLE_NAME = 'Total_server_memory';"
 
-memsql-ops memsql-top -u root -p ve0otWIdmqWz4DKS
+memsql-ops memsql-top -u root -p
 
-mysql -h127.0.0.1 -uroot -pve0otWIdmqWz4DKS -P3306 -e"SHOW CLUSTER STATUS;" | grep vortex_topics_28
+mysql -h127.0.0.1 -uroot -p -P3306 -e"SHOW CLUSTER STATUS;" | grep vortex_topics_28
 
 E04A3DBD0DBC25C06829A2
 
@@ -28,7 +28,7 @@ E04A3DBD0DBC25C06829A2
 fallocate file on each node of about 40GB
 ------------------------------------------------------
 #!/bin/bash
-mysql -h10.238.101.86 -ubackupagent -poUblYdL1Pz9c!8vQyH6E3 -P3306 -e"backup vortex_aquiring to '/opt/backups/prod/vortex_aquiring';"
+mysql -h10.238.101.86 -ubackupagent -p -P3306 -e"backup vortex_aquiring to '/opt/backups/prod/vortex_aquiring';"
 mv /opt/backups/prod/vortex_aquiring /opt/backups/prod/vortex_aquiring_$(date +%m_%d_%Y)
 
 ------------------------------------------------------
@@ -37,8 +37,8 @@ mv /opt/backups/prod/vortex_aquiring /opt/backups/prod/vortex_aquiring_$(date +%
 ve0otWIdmqWz4DKS
 
 ------------------------------------------------------
-mysql -h10.238.21.2 -uroot -peOsRiiMcV4TqF5r2 -P3306 -e "SHOW CLUSTER STATUS;" | grep Orphan
-mysql -hlocalhost -uroot -peOsRiiMcV4TqF5r2 -P3306 -e "SELECT * FROM ;" | grep Orphan
+mysql -h10.238.21.2 -uroot -p -P3306 -e "SHOW CLUSTER STATUS;" | grep Orphan
+mysql -hlocalhost -uroot -p -P3306 -e "SELECT * FROM ;" | grep Orphan
 
 
 sudo find /srv/data/memsql/ -name "memsql.cnf" | xargs cat | grep "maximum"
@@ -141,58 +141,14 @@ memsql-ops memsql-update-config --key max_connection_threads --value 8192
 ------------------------------------------------------------------------------------------------------
 6. set root login on Aus Prod and Aus Non-Prod
 non-prod
-memsql-ops memsql-update-root-password -p eOsRiiMcV4TqF5r2
+memsql-ops memsql-update-root-password -p
 
 prod
-memsql-ops memsql-update-root-password -p ve0otWIdmqWz4DKS
+memsql-ops memsql-update-root-password -p
 
 
 ------------------------------------------------------------------------------------------------------
-7. create vortex user in Aus Prod and Aus Non-Prod
 
---run on all Aggs and Leaves
-non-prod
-CREATE USER spark_user_ro;
-GRANT SELECT, SHOW METADATA ON *.* TO 'spark_user_ro'@'%';
-SET PASSWORD FOR 'spark_user_ro'@'%' = PASSWORD('@4T4T4lAgnlbsxYOUgTSSJjY');
-
-prod
-CREATE USER spark_user_ro;
-GRANT SELECT, SHOW METADATA ON *.* TO 'spark_user_ro'@'%';
-SET PASSWORD FOR 'spark_user_ro'@'%' = PASSWORD('H4wr3!qbI$74tNEvP');
-
-
-
-
---run on all Aggs
-CREATE USER vortex;
-GRANT SELECT ON *.* TO 'vortex'@'%';
-GRANT INSERT ON *.* TO 'vortex'@'%';
-GRANT UPDATE ON *.* TO 'vortex'@'%';
-GRANT DELETE ON *.* TO 'vortex'@'%';
-GRANT CREATE ON *.* TO 'vortex'@'%';
-GRANT DROP ON *.* TO 'vortex'@'%';
-GRANT RELOAD ON *.* TO 'vortex'@'%';
-GRANT INDEX ON *.* TO 'vortex'@'%';
-GRANT ALTER ON *.* TO 'vortex'@'%';
-GRANT SHOW METADATA ON *.* TO 'vortex'@'%';
-GRANT LOCK TABLES ON *.* TO 'vortex'@'%';
-GRANT CREATE VIEW ON *.* TO 'vortex'@'%';
-GRANT ALTER VIEW ON *.* TO 'vortex'@'%';
-GRANT DROP VIEW ON *.* TO 'vortex'@'%';
-GRANT CREATE DATABASE ON *.* TO 'vortex'@'%';
-GRANT DROP DATABASE ON *.* TO 'vortex'@'%';
-SET PASSWORD FOR 'vortex'@'%' = PASSWORD('SqU3O2olLVT2FzZh');
-
---run on all Aggs and Leaves
-CREATE USER monitor_ro;
-GRANT SELECT ON *.* to 'monitor_ro'@'%';
-SET PASSWORD FOR 'monitor_ro'@'%' = PASSWORD('p!#$zCAglnP!tMj1Gy');
-
---run on all Aggs
-CREATE USER sql_maint;
-GRANT BACKUP ON *.* to 'sql_maint'@'%';
-SET PASSWORD FOR 'sql_maint'@'%' = PASSWORD('Uc-87G$,u9Exk#zr*UtZ');
 
 
 
@@ -217,7 +173,7 @@ oct 16th - MemSQL 6
 memsql-ops memsql-list -q -r leaf | xargs -L 1 memsql-ops memsql-update-config --key maximum_memory --value 55296
 memsql-ops memsql-list -q -r leaf | xargs -L 1 memsql-ops memsql-update-config --key maximum_table_memory --value 49766
 
-mysql -h127.0.0.1 -uroot -peOsRiiMcV4TqF5r2 -P3306 -e"SELECT * FROM INFORMATION_SCHEMA.GLOBAL_VARIABLES WHERE VARIABLE_NAME LIKE '%mem%'"
+mysql -h127.0.0.1 -uroot -p -P3306 -e"SELECT * FROM INFORMATION_SCHEMA.GLOBAL_VARIABLES WHERE VARIABLE_NAME LIKE '%mem%'"
 
 memsql-ops memsql-list -q -r leaf | xargs -L mysql -h
 
@@ -321,8 +277,8 @@ sysctl -w vm.min_free_kbytes=500000
 
 
 #!/bin/bash
-mysql -hatl-vps-mema001 -usql_maint -pUc-87G$,u9Exk#zr*UtZ -P3306 -e"DELETE FROM vortex_topics.STATEMENTS WHERE YEAR(json_extract_string(_source, 'statementDate')) <= 2015;"
-mysql -hatl-vps-mema001 -usql_maint -pUc-87G$,u9Exk#zr*UtZ -P3306 -e"SNAPSHOT DATABASE vortex_topics;"
+mysql -hatl-vps-mema001 -usql_maint -p -P3306 -e"DELETE FROM vortex_topics.STATEMENTS WHERE YEAR(json_extract_string(_source, 'statementDate')) <= 2015;"
+mysql -hatl-vps-mema001 -usql_maint -p -P3306 -e"SNAPSHOT DATABASE vortex_topics;"
 
 
 ls -al /srv/data/memsql-Ops
@@ -358,64 +314,16 @@ https://help.memsql.com/hc/en-us/articles/115005400003-Error-when-upgrading-to-O
 5. add memsql through UI
 6. update root pwd
   non-prod
-  memsql-ops memsql-update-root-password -p eOsRiiMcV4TqF5r2
+  memsql-ops memsql-update-root-password -p
 
   prod
-  memsql-ops memsql-update-root-password -p ve0otWIdmqWz4DKS
+  memsql-ops memsql-update-root-password -p
 7. update memory settings
   memsql-ops memsql-update-config --key maximum_memory --value 55296 --set-global
   memsql-ops memsql-update-config --key maximum_table_memory --value 49766 --set-global
 8. update max connections
   memsql-ops memsql-update-config --key max_connection_threads --value 8192 --set-global
 
-
-
-  --run on all Aggs and Leaves
-  non-prod
-  CREATE USER spark_user_ro;
-  GRANT SELECT, SHOW METADATA ON *.* TO 'spark_user_ro'@'%';
-  SET PASSWORD FOR 'spark_user_ro'@'%' = PASSWORD('@4T4T4lAgnlbsxYOUgTSSJjY');
-
-  prod
-  CREATE USER spark_user_ro;
-  GRANT SELECT, SHOW METADATA ON *.* TO 'spark_user_ro'@'%';
-  SET PASSWORD FOR 'spark_user_ro'@'%' = PASSWORD('H4wr3!qbI$74tNEvP');
-
-
-
-
-  --run on all Aggs
-  CREATE USER vortex;
-  GRANT SELECT ON *.* TO 'vortex'@'%';
-  GRANT INSERT ON *.* TO 'vortex'@'%';
-  GRANT UPDATE ON *.* TO 'vortex'@'%';
-  GRANT DELETE ON *.* TO 'vortex'@'%';
-  GRANT CREATE ON *.* TO 'vortex'@'%';
-  GRANT DROP ON *.* TO 'vortex'@'%';
-  GRANT RELOAD ON *.* TO 'vortex'@'%';
-  GRANT INDEX ON *.* TO 'vortex'@'%';
-  GRANT ALTER ON *.* TO 'vortex'@'%';
-  GRANT SHOW METADATA ON *.* TO 'vortex'@'%';
-  GRANT LOCK TABLES ON *.* TO 'vortex'@'%';
-  GRANT CREATE VIEW ON *.* TO 'vortex'@'%';
-  GRANT ALTER VIEW ON *.* TO 'vortex'@'%';
-  GRANT DROP VIEW ON *.* TO 'vortex'@'%';
-  GRANT CREATE DATABASE ON *.* TO 'vortex'@'%';
-  GRANT DROP DATABASE ON *.* TO 'vortex'@'%';
-  SET PASSWORD FOR 'vortex'@'%' = PASSWORD('SqU3O2olLVT2FzZh');
-
-  --run on all Aggs and Leaves
-  CREATE USER monitor_ro;
-  GRANT SELECT ON *.* to 'monitor_ro'@'%';
-  SET PASSWORD FOR 'monitor_ro'@'%' = PASSWORD('p!#$zCAglnP!tMj1Gy');
-
-  --run on all Aggs
-  CREATE USER sql_maint;
-  GRANT BACKUP ON *.* to 'sql_maint'@'%';
-  SET PASSWORD FOR 'sql_maint'@'%' = PASSWORD('Uc-87G$,u9Exk#zr*UtZ');
-
-
-CREATE USER
 
 
 memsql-ops memsql-list -q -r leaf | xargs -L 1 memsql-ops memsql-update-config --key max_connection_threads --value 8192
@@ -440,15 +348,6 @@ atl-isilon-non-prod-ro.corp.pps.io:/MemSQL-Bkps-nProd-AUS
 
 aus-isilon-non-prod.corp.pps.io:/MemSQL-Bkps-nProd
 aus-isilon-non-prod-ro.corp.pps.io:/MemSQL-Bkps-nProd-ATL
-
-
-atl
-
-05
-
-07
-08
-
 
 
 -----------------------------------------------------------------------------------------------------------
