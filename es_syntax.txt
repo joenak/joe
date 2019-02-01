@@ -1,0 +1,194 @@
+GET _search
+{
+   "query": {
+      "match_all": {}
+   }
+}
+
+
+
+GET http://172.16.248.174:9200/test
+
+PUT http://172.16.248.174:9200/test2?pretty
+
+PUT http://172.16.248.174:9200/test2/ext/3?pretty
+{
+    "name": "jon"
+    , "state": "GA"
+}
+
+POST http://172.16.248.174:9200/test2/ext/
+{
+    "name": "jjj"
+    , "state": "WA"
+    , "address": "123 Oak Street"
+}
+
+GET http://172.16.248.174:9200/test2/ext/3?pretty
+
+DELETE http://172.16.248.174:9200/test
+--
+GET http://172.16.248.174:9200/_cat/shards?v
+
+
+GET http://172.16.248.174:9200/_cat/health?v
+
+GET http://172.16.248.174:9200/_cat/nodes?v
+
+GET http://172.16.248.174:9200/_cat/indices?v
+
+GET http://172.16.248.174:9200/test2/ext/_search?q=*&pretty
+
+GET http://172.16.248.174:9200/test2/ext/_search
+{
+  "query": { "match_all": {} },
+   "_source": ["name"]
+}
+
+GET http://172.16.248.174:9200/test2/ext/_search
+{
+ "query": { "match": { "name": "jet" } }
+}
+
+
+
+GET http://172.16.248.174:9200/test2/ext/_search
+{
+ "query": { "match": { "address": "street" } }
+}
+
+GET http://172.16.248.174:9200/test2/ext/_search
+{
+  "query": {
+    "bool": {
+      "must": [
+        { "match": { "address": "123" } },
+        { "match": { "name": "j" } }
+      ]
+    }
+  }
+}
+
+GET http://172.16.248.174:9200/test2/ext/_search
+{
+  "query": {
+    "bool": {
+      "should": [
+        { "match": { "address": "123" } },
+        { "match": { "name": "joe" } }
+      ]
+    }
+  }
+}
+
+GET http://172.16.248.174:9200/test2/ext/_search
+{
+  "size": 0,
+  "aggs": {
+    "group_by_state": {
+      "terms": {
+        "field": "state.keyword"
+      }
+    }
+  }
+}
+
+
+GET /test2/ext/_search
+{
+  "size": 0,
+  "aggs": {
+    "group_by_state": {
+      "terms": {
+        "field": "state.keyword"
+      }
+    }
+  }
+}
+
+-------------------------------
+GET _tasks
+
+--query by range
+GET memsql_memory/_search
+{
+  "query": {
+    "range": {
+      "timestamp": {
+        "gte": "2017-10-03T00:00:00",
+        "lte": "2017-10-04T00:00:00"
+      }
+    }
+  }
+}
+
+--query by term
+GET memsql_test/_search
+{
+  "query": {
+    "term": { "table_name" : "test2" }
+  }
+}
+
+--delete by query
+POST memsql_memory/memory/_delete_by_query
+{
+  "query": {
+        "match_all": {}
+    }
+}
+
+GET memsql_nodes/nodes/_search
+{
+  "query": {
+    "match_all": {}
+  },
+  "_source": ["host"]
+}
+
+
+POST _reindex
+{
+  "source": {
+    "index": "name1"
+  },
+  "dest": {
+    "index": "name2"
+  }
+}
+
+
+
+GET rpt.tsys.daily.authorization/_search
+{
+  "_source": [
+    "accountNumber",
+    "merchantName",
+    "transactionDateAndTime",
+    "authorizationResponseStatus",
+    "authorizedAmount",
+    "cardNumber.mask",
+    "cardNumber.hash"
+  ],
+  "query": {
+    "bool": {
+      "must": [
+        { "match": { "mccCode": "5968" }},
+        { "match": { "cardType": "MasterCard" }}
+      ],
+      "filter": {
+        "range": {
+          "transactionDateAndTime": {
+            "gte": "2018-01-01",
+            "lte": "2018-01-31",
+            "format": "yyyy-MM-dd"
+          }
+        }
+      }
+    }
+  }
+}
+
+
+
+es2csv -u http://atl-vps-esc01:9200 -i rpt.tsys.daily.authorization -f accountNumber merchantName transactionDateAndTime authoriztaionResponseStatus authorizedAmount cardNumber.mask cardNumber.hash -o output.csv -q 'mccCode: "5968" AND cardType: "MasterCard" AND transactionDateAndTime: ["2018-01-01" TO "2018-01-31"]'

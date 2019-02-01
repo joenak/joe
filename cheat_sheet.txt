@@ -1,0 +1,664 @@
+------------------------------------------------------------------------------------------------------
+-- production
+mysql -h127.0.0.1 -uroot -pve0otWIdmqWz4DKS -P3306 --prompt="memsql> "
+------------------------------------------------------------------------------------------------------
+
+mysql -h10.238.103.11 -uroot -pve0otWIdmqWz4DKS -P3306 --prompt="memsql> "
+
+mysql -h127.0.0.1 -uroot -peOsRiiMcV4TqF5r2 -P3306 -e"SELECT * FROM INFORMATION_SCHEMA.GLOBAL_VARIABLES WHERE VARIABLE_NAME LIKE '%mem%'"
+
+mysql -h127.0.0.1 -uroot -pve0otWIdmqWz4DKS -P3306 -e"SHOW CLUSTER STATUS;" | grep 10.238.103.60
+
+------------------------------------------------------------------------------------------------------
+non-prod
+mysql -h127.0.0.1 -uroot -peOsRiiMcV4TqF5r2 -P3306 --prompt="memsql> "
+------------------------------------------------------------------------------------------------------
+
+mysql -h127.0.0.1 -uroot -pve0otWIdmqWz4DKS -P3306 -e"SELECT * FROM INFORMATION_SCHEMA.GLOBAL_STATUS WHERE VARIABLE_NAME = 'Alloc_table_memory';"
+mysql -h127.0.0.1 -uroot -peOsRiiMcV4TqF5r2 -P3306 -e"SELECT * FROM INFORMATION_SCHEMA.GLOBAL_STATUS WHERE VARIABLE_NAME = 'Total_server_memory';"
+
+memsql-ops memsql-top -u root -p ve0otWIdmqWz4DKS
+
+mysql -h127.0.0.1 -uroot -pve0otWIdmqWz4DKS -P3306 -e"SHOW CLUSTER STATUS;" | grep vortex_topics_28
+
+E04A3DBD0DBC25C06829A2
+
+
+------------------------------------------------------
+fallocate file on each node of about 40GB
+------------------------------------------------------
+#!/bin/bash
+mysql -h10.238.101.86 -ubackupagent -poUblYdL1Pz9c!8vQyH6E3 -P3306 -e"backup vortex_aquiring to '/opt/backups/prod/vortex_aquiring';"
+mv /opt/backups/prod/vortex_aquiring /opt/backups/prod/vortex_aquiring_$(date +%m_%d_%Y)
+
+------------------------------------------------------
+
+------------------------------------------------------
+ve0otWIdmqWz4DKS
+
+------------------------------------------------------
+mysql -h10.238.21.2 -uroot -peOsRiiMcV4TqF5r2 -P3306 -e "SHOW CLUSTER STATUS;" | grep Orphan
+mysql -hlocalhost -uroot -peOsRiiMcV4TqF5r2 -P3306 -e "SELECT * FROM ;" | grep Orphan
+
+
+sudo find /srv/data/memsql/ -name "memsql.cnf" | xargs cat | grep "maximum"
+
+
+
+memsql-ops memsql-path
+memsql-ops memsql-list
+cd /srv/data/memsql/master-3306/tracelogs
+cd /srv/data/memsql/leaf-3306/tracelogs
+memsql-ops memsql-update-config --key maximum_memory --value 92160
+memsql-ops memsql-update-config --key maximum_table_memory --value 78336
+memsql-ops memsql-update-config --key max_connection_threads --value 1024
+
+27648
+22528
+
+64 = 65536
+0.9 = 58982 GB
+0.85 = 50135
+
+115 = 117760
+0.9 = 105984
+0.9 = 95385
+
+100 = 102400
+0.9 = 92160
+0.9 = 82944
+
+-----------gator
+cpx_acquiring
+vortex_reporting
+vortex_timeline
+vortex_topics
+
+keep last 90 days....
+data sanititation....
+
+
+natl-kafka01, natl-kafka02, natl-kafka03, natl-kafka04, natl-kafka05
+atl-vps-kaf01, atl-vps-kaf02, atl-vps-kaf03, atl-vps-kaf04, atl-vps-kaf05
+
+----------------------------------------------------
+----------------------------------------------------
+
+rebalance partitions on cpx_acquiring;
+rebalance partitions on cpx_issuing;
+rebalance partitions on mx_insights;
+rebalance partitions on mx_merchant;
+rebalance partitions on vortex_accounting;
+rebalance partitions on vortex_master;
+rebalance partitions on vortex_reporting;
+rebalance partitions on vortex_timeline;
+rebalance partitions on vortex_topics;
+
+
+------------------------------------------------------------------------------------------------------
+1. set memory and max memory settings in Aus Prod and Aus Non-Prod
+14 = 14336
+max = .9 = 12902
+tab = 10967
+memsql-ops memsql-update-config --key maximum_memory --value 12902
+memsql-ops memsql-update-config --key maximum_table_memory --value 10967
+34 = 34816
+max = .9 = 31334
+tab = .85 = 26634
+memsql-ops memsql-update-config --key maximum_memory --value 31334
+memsql-ops memsql-update-config --key maximum_table_memory --value 26634
+88 = 90112
+max = .9 = 81100
+tab = .85 = 68935
+memsql-ops memsql-update-config --key maximum_memory --value 81100
+memsql-ops memsql-update-config --key maximum_table_memory --value 68935
+100 = 102400
+.9 = 92160
+.9 = 82944
+
+
+90 = 92160
+0.9 = 82944
+0.85 = 70502
+
+92160
+87552
+78796
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+memsql-ops memsql-list -q -r leaf | xargs -L 1 memsql-ops memsql-update-config --key maximum_memory --value 55296
+memsql-ops memsql-list -q -r leaf | xargs -L 1 memsql-ops memsql-update-config --key maximum_table_memory --value 49766
+memsql-ops memsql-list -q -r leaf | xargs -L 1 memsql-ops memsql-update-config --key max_connection_threads --value 8192
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+2. set connection limits in Aus Prod and Aus Non-Prod
+memsql-ops memsql-update-config --key max_connection_threads --value 8192
+------------------------------------------------------------------------------------------------------
+3. set snapshots to run daily in all environments....off time 1am?
+------------------------------------------------------------------------------------------------------
+4. set backups to run daily in all environments--->2am?
+------------------------------------------------------------------------------------------------------
+5. build jobs to cycle files
+------------------------------------------------------------------------------------------------------
+6. set root login on Aus Prod and Aus Non-Prod
+non-prod
+memsql-ops memsql-update-root-password -p eOsRiiMcV4TqF5r2
+
+prod
+memsql-ops memsql-update-root-password -p ve0otWIdmqWz4DKS
+
+
+------------------------------------------------------------------------------------------------------
+7. create vortex user in Aus Prod and Aus Non-Prod
+
+--run on all Aggs and Leaves
+non-prod
+CREATE USER spark_user_ro;
+GRANT SELECT, SHOW METADATA ON *.* TO 'spark_user_ro'@'%';
+SET PASSWORD FOR 'spark_user_ro'@'%' = PASSWORD('@4T4T4lAgnlbsxYOUgTSSJjY');
+
+prod
+CREATE USER spark_user_ro;
+GRANT SELECT, SHOW METADATA ON *.* TO 'spark_user_ro'@'%';
+SET PASSWORD FOR 'spark_user_ro'@'%' = PASSWORD('H4wr3!qbI$74tNEvP');
+
+
+
+
+--run on all Aggs
+CREATE USER vortex;
+GRANT SELECT ON *.* TO 'vortex'@'%';
+GRANT INSERT ON *.* TO 'vortex'@'%';
+GRANT UPDATE ON *.* TO 'vortex'@'%';
+GRANT DELETE ON *.* TO 'vortex'@'%';
+GRANT CREATE ON *.* TO 'vortex'@'%';
+GRANT DROP ON *.* TO 'vortex'@'%';
+GRANT RELOAD ON *.* TO 'vortex'@'%';
+GRANT INDEX ON *.* TO 'vortex'@'%';
+GRANT ALTER ON *.* TO 'vortex'@'%';
+GRANT SHOW METADATA ON *.* TO 'vortex'@'%';
+GRANT LOCK TABLES ON *.* TO 'vortex'@'%';
+GRANT CREATE VIEW ON *.* TO 'vortex'@'%';
+GRANT ALTER VIEW ON *.* TO 'vortex'@'%';
+GRANT DROP VIEW ON *.* TO 'vortex'@'%';
+GRANT CREATE DATABASE ON *.* TO 'vortex'@'%';
+GRANT DROP DATABASE ON *.* TO 'vortex'@'%';
+SET PASSWORD FOR 'vortex'@'%' = PASSWORD('SqU3O2olLVT2FzZh');
+
+--run on all Aggs and Leaves
+CREATE USER monitor_ro;
+GRANT SELECT ON *.* to 'monitor_ro'@'%';
+SET PASSWORD FOR 'monitor_ro'@'%' = PASSWORD('p!#$zCAglnP!tMj1Gy');
+
+--run on all Aggs
+CREATE USER sql_maint;
+GRANT BACKUP ON *.* to 'sql_maint'@'%';
+SET PASSWORD FOR 'sql_maint'@'%' = PASSWORD('Uc-87G$,u9Exk#zr*UtZ');
+
+
+
+QA - AUSTIN
+memsql-ops memsql-update-config CE211F7 --key maximum_memory --value 31334
+memsql-ops memsql-update-config CE211F7 --key maximum_table_memory --value 26634
+
+
+
+oct 16th - MemSQL 6
+
+/srv/data/files
+
+102.85
+102.87
+102.89
+
+60 = 61440
+.9 = 55296
+.9 = 49766
+
+memsql-ops memsql-list -q -r leaf | xargs -L 1 memsql-ops memsql-update-config --key maximum_memory --value 55296
+memsql-ops memsql-list -q -r leaf | xargs -L 1 memsql-ops memsql-update-config --key maximum_table_memory --value 49766
+
+mysql -h127.0.0.1 -uroot -peOsRiiMcV4TqF5r2 -P3306 -e"SELECT * FROM INFORMATION_SCHEMA.GLOBAL_VARIABLES WHERE VARIABLE_NAME LIKE '%mem%'"
+
+memsql-ops memsql-list -q -r leaf | xargs -L mysql -h
+
+1. copy ops.tar
+2. un tar
+3. sudo ./install.sh
+4. memsql-ops follow -h <> -P 9000
+
+
+
+1.  Upgrade MemSQL Ops
+# memsql-ops agent-upgrade --file-path /srv/data/memsql-ops-5.8.2.tar.gz
+2.  Validate Cluster Health
+MA> explain rebalance partitions;
+3.  Snapshot databases
+MA> snapshot database <database_name>;
+4.  On MA disable auto-attach and leaf failure detection
+MA> set global auto_attach = off;
+MA> set global leaf_failure_detection = off;
+5.  On all aggs, disable aggregator failure detection
+# memsql-ops memsql-list -q -r aggregator master | xargs -L 1 memsql-ops memsql-update-config --key aggregator_failure_detection --value off --set-global
+6.  Upgrade leaf nodes
+6a. detach leaf
+MA> detach leaf 'host':port;
+6b. stop node
+# memsql-ops memsql-stop <id>
+6c. upgrade node
+# memsql-ops memsql-upgrade --skip-snapshot --no-backup-data-directories --memsql-id <full id> --no-prompt --file-path /srv/data/memsqlbin_amd64.tar.gz
+6d. full ids
+# memsql-ops memsql-list -q | grep SHORTENED_MEMSQL_ID
+6e. start node
+# memsql-ops memsql-start <id>
+6f. wait for node to recover
+MA> show databases extended;
+6g. attach leaf
+MA> attach leaf 'host':port no rebalance;
+6h. wait for attach to complete, all nodes must be attached and online.
+6i. restore redundance on all DBs
+MA> restore redundancy on <database_name>;
+6j. upgrade all leaves in availability group 1 then AG 2
+6k. restore rundancy on all DBs
+MA> restore redundancy on <database_name>;
+6l. rebalance
+MA> rebalance partitions on <database_name>;
+
+7.  upgrade child aggregators
+<see step 6>
+8.  upgrade master aggregators
+<see step 6>
+9.  re-enable auto-attach and leaf failure
+MA> set global auto_attach = on;
+MA> set global leaf_failure_detection = on;
+10. on all Aggs re-enable failure detection
+# memsql-ops memsql-list -q -r aggregator master | xargs -L 1 memsql-ops memsql-update-config --key aggregator_failure_detection --value on --set-global
+# memsql-ops memsql-list -q -r aggregator master | xargs -L 1 memsql-ops memsql-update-config --key aggregator_failure_detection --delete
+
+
+
+
+trigger full gc flush
+
+
+memsql-ops memsql-list -q -r aggregator master | xargs -L 1 memsql-ops memsql-update-config --key aggregator_failure_detection --value on --set-global
+memsql-ops memsql-list -q -r aggregator master | xargs -L 1 memsql-ops memsql-update-config --key aggregator_failure_detection --delete
+
+
+
+-----------
+in expanded cluster REPORT
+# find . -name processlist.json | xargs cat | grep -B7 -i run
+
+
+
+1.  download rpm
+2.  rpm -ivh mysql.....
+
+
+explain restore redundancy on cpx_acquiring
+
+explain restore redundancy on cpx_issuing
+
+explain restore redundancy on mx_insights
+
+explain restore redundancy on mx_merchant
+
+explain restore redundancy on vortex_accounting
+
+explain restore redundancy on vortex_master
+
+explain restore redundancy on vortex_reporting
+
+explain restore redundancy on vortex_timeline
+
+explain restore redundancy on vortex_topics
+
+explain clear orphan databases
+
+sysctl -w vm.min_free_kbytes=1390895
+sysctl -w vm.min_free_kbytes=500000
+
+
+
+#!/bin/bash
+mysql -hatl-vps-mema001 -usql_maint -pUc-87G$,u9Exk#zr*UtZ -P3306 -e"DELETE FROM vortex_topics.STATEMENTS WHERE YEAR(json_extract_string(_source, 'statementDate')) <= 2015;"
+mysql -hatl-vps-mema001 -usql_maint -pUc-87G$,u9Exk#zr*UtZ -P3306 -e"SNAPSHOT DATABASE vortex_topics;"
+
+
+ls -al /srv/data/memsql-Ops
+
+https://docs.memsql.com/memsql-ops/v6.0/memsql-ops-releases
+
+/opt/backups
+
+https://help.memsql.com/hc/en-us/articles/115005400003-Error-when-upgrading-to-Ops-Version-6-User-has-explicitly-unmonitored-colocated-MemSQL-nodes
+
+
+memsql-ops console
+api.call("topology/intentions/create", { "intention": "AgentsUpgrade", "data": { "agents": None, "interactive": False, "target_version": "6.0.10" } })
+
+????? not sure this will work or break node.....
+
+memsql-ops unfollow --force
+sudo memsql-ops uninstall
+
+
+
+-------------------------------
+memsql-ops memsql-update-config --key general_log --value on
+
+
+https://help.memsql.com/hc/en-us/articles/115005400003-Error-when-upgrading-to-Ops-Version-6-User-has-explicitly-unmonitored-colocated-MemSQL-nodes
+
+
+1. copy files to /srv/data/memsql/files
+2. un tar memsql-ops
+3. sudo ./install.sh --ops-datadir /var/lib/memsql-ops/data --memsql-installs-dir /opt/memsql
+4. memsql-ops follow -h<hostname> -P9000
+5. add memsql through UI
+6. update root pwd
+  non-prod
+  memsql-ops memsql-update-root-password -p eOsRiiMcV4TqF5r2
+
+  prod
+  memsql-ops memsql-update-root-password -p ve0otWIdmqWz4DKS
+7. update memory settings
+  memsql-ops memsql-update-config --key maximum_memory --value 55296 --set-global
+  memsql-ops memsql-update-config --key maximum_table_memory --value 49766 --set-global
+8. update max connections
+  memsql-ops memsql-update-config --key max_connection_threads --value 8192 --set-global
+
+
+
+  --run on all Aggs and Leaves
+  non-prod
+  CREATE USER spark_user_ro;
+  GRANT SELECT, SHOW METADATA ON *.* TO 'spark_user_ro'@'%';
+  SET PASSWORD FOR 'spark_user_ro'@'%' = PASSWORD('@4T4T4lAgnlbsxYOUgTSSJjY');
+
+  prod
+  CREATE USER spark_user_ro;
+  GRANT SELECT, SHOW METADATA ON *.* TO 'spark_user_ro'@'%';
+  SET PASSWORD FOR 'spark_user_ro'@'%' = PASSWORD('H4wr3!qbI$74tNEvP');
+
+
+
+
+  --run on all Aggs
+  CREATE USER vortex;
+  GRANT SELECT ON *.* TO 'vortex'@'%';
+  GRANT INSERT ON *.* TO 'vortex'@'%';
+  GRANT UPDATE ON *.* TO 'vortex'@'%';
+  GRANT DELETE ON *.* TO 'vortex'@'%';
+  GRANT CREATE ON *.* TO 'vortex'@'%';
+  GRANT DROP ON *.* TO 'vortex'@'%';
+  GRANT RELOAD ON *.* TO 'vortex'@'%';
+  GRANT INDEX ON *.* TO 'vortex'@'%';
+  GRANT ALTER ON *.* TO 'vortex'@'%';
+  GRANT SHOW METADATA ON *.* TO 'vortex'@'%';
+  GRANT LOCK TABLES ON *.* TO 'vortex'@'%';
+  GRANT CREATE VIEW ON *.* TO 'vortex'@'%';
+  GRANT ALTER VIEW ON *.* TO 'vortex'@'%';
+  GRANT DROP VIEW ON *.* TO 'vortex'@'%';
+  GRANT CREATE DATABASE ON *.* TO 'vortex'@'%';
+  GRANT DROP DATABASE ON *.* TO 'vortex'@'%';
+  SET PASSWORD FOR 'vortex'@'%' = PASSWORD('SqU3O2olLVT2FzZh');
+
+  --run on all Aggs and Leaves
+  CREATE USER monitor_ro;
+  GRANT SELECT ON *.* to 'monitor_ro'@'%';
+  SET PASSWORD FOR 'monitor_ro'@'%' = PASSWORD('p!#$zCAglnP!tMj1Gy');
+
+  --run on all Aggs
+  CREATE USER sql_maint;
+  GRANT BACKUP ON *.* to 'sql_maint'@'%';
+  SET PASSWORD FOR 'sql_maint'@'%' = PASSWORD('Uc-87G$,u9Exk#zr*UtZ');
+
+
+CREATE USER
+
+
+memsql-ops memsql-list -q -r leaf | xargs -L 1 memsql-ops memsql-update-config --key max_connection_threads --value 8192
+
+memsql-ops memsql-update-config --key auditlog_level --value ALL-QUERIES-PLAINTEXT
+memsql-ops memsql-update-config --key auditlogdir --value /srv/data/memsql/audit
+
+Linux
+
+mount server:/path /mnt/local
+umount -lf /mnt/local
+
+rmdir --remove direcory
+
+
+
+sudo mount
+
+
+atl-isilon-non-prod.corp.pps.io:/MemSQL-Bkps-nProd
+atl-isilon-non-prod-ro.corp.pps.io:/MemSQL-Bkps-nProd-AUS
+
+aus-isilon-non-prod.corp.pps.io:/MemSQL-Bkps-nProd
+aus-isilon-non-prod-ro.corp.pps.io:/MemSQL-Bkps-nProd-ATL
+
+
+atl
+
+05
+
+07
+08
+
+
+
+-----------------------------------------------------------------------------------------------------------
+topic lagging
+container down
+
+cpx - cpx team
+mx-vtx - mx connect team
+else - david
+
+UBQ - Agg :: no SLA - offset moving
+All
+
+File Import Consumer
+
+cpu
+tags.keyword:$site AND telegraf.hostname.keyword:$allnodes AND measurement_name.keyword:cpu AND telegraf.cpu.keyword:\"cpu-total\""
+
+telegraf
+measurement_name = net
+net.bytes_recv
+net.bytes_sent
+
+disk
+disk.used
+disk.used_percent
+
+diskio
+write_bytes
+read_bytes
+
+rgba(50,172,45,0.97)
+
+
+tags:production
+beat.name
+metricset.name
+
+metricbeat
+metricset.name = io
+-------system.diskio.iostat.await, system.diskio.iostat.busy,
+system.disk.io.iostat.write.per_sec.bytes
+system.disk.io.iostat.read.per_sec.types
+
+metricset.name = memory
+system.memory.swap.used.pct
+
+
+metricset.name = cpu
+system.cpu.cores
+system.cpu.total.pct
+system.cpu.user.pct
+system.cpu.system.pct
+
+network
+
+-------------------------------------------------------------------
+
+disk utilization
+disk queue time
+
+network usage
+dropped packets
+
+paging
+host processes ?
+connections
+
+
+metricbeat
+tags:production AND metricset.module:mysql AND metricset.host: AND mysql.status.connections
+
+mysql.status.threads.connected
+mysql.status.bytes.received
+mysql.status.bytes.sent
+
+
+telegraf
+diskio.read_bytes
+diskio.write_bytes
+deriavative
+
+
+
+
+syslog
+logstash-vortex-*
+
+tags:syslog
+
+
+L01--L02
+L03--L04
+L05--L06
+L07--L08
+L09--L10
+L11--L12
+
+
+SasCxP9$yG97WZQb!pc2ygw9nu
+
+
+
+
+
+
+Mongo
+--------------------
+1. at /etc/init.d/ create disable-transparent-hugepages
+2. vim disable-transparent-hugepages
+#!/bin/bash
+### BEGIN INIT INFO
+# Provides:           disable-transparent-hugepages
+# Required-Start:     $local_fs
+# Required-Stop:
+# X-Start-Before:     mongod mongodb-mms-automation-agent
+# Default-Start:      2 3 4 5
+# Default-Stop:       0 1 6
+# Short-Description:  Disable Linux transparent huge pages
+# Description:        Disable Linux transparent huge pages, to improve database performance
+### END INIT INFO
+
+path = /sys/kernel/mm/transparent_hugepage
+
+echo 'never' > ${path}/enabled
+echo 'never' > ${path}/defrag
+
+3. chomod 755 /etc/init.d/disable-transparent-hugepages
+4. sudo chkconfig --add disable-transparent-hugepages
+
+
+5. /etc/mongod.conf --add ip address or all to binding
+
+rs.initiate()
+rs.add({host:"name", priority:0, votes: 0})
+rs.slaveok()
+
+
+
+/srv/data/memsql..... {
+  daily
+  nocopytruncate
+}
+
+/srv/data/memsql/child-3306-MI0d554abc/tracelogs/
+
+
+MIf8031e66
+
+/srv/data/memsql/*/tracelogs/*.log {
+  daily
+  rotate 3
+  missingok
+  sharedscripts
+  postrotate
+    killall -q -s1 memsqld
+  endscript
+}
+
+
+
+1. how can you see which kernel version a system is running -- uname
+2. how can you check a systems current ip address -- ip addr show
+3. how do you check for free disk space -- df -h
+4. how do you manage services -- systemctl status memsqld
+5. how would you check the size of a diretory's contents -- du -sh code/
+6. how would you check for open ports -- netstat -tulpn
+7. cpu usage - ps aux
+
+enterprise
+- per node -
+- ram pool -
+50k per year
+------------------
+1 hr SLA
+
+
+----------------------------------------------------
+monogrc.js
+----------------------------------------------------
+rs.slaveOk()
+
+var _no_ = function() {
+  print("This command is disabled");
+}
+
+DB.prototype.dropDatabase = _no_;
+db.dropDatabase = db.prototype.dropDatabase;
+
+DB.prototype.shutdownServer = _no_;
+db.shutdownServer = db.prototype.shutdownServer;
+
+
+/var/log/mongodb
+/var/lib/mongo
+
+
+
+db.createUser(
+{
+user: "username",
+pwd: "password",
+roles: [{}]
+}
+)
+
+
+
+cqlsh> update system.local set cluster_name = 'name' where key = 'local';
+$ ./nodetool flush
+
+
+select * from system_schema.keyspaces;
