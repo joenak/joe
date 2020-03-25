@@ -1,0 +1,89 @@
+{
+  "trigger": {
+    "schedule": {
+      "interval": "10m"
+    }
+  },
+  "input": {
+    "chain": {
+      "inputs": [
+        {
+          "first": {
+            "search": {
+              "request": {
+                "search_type": "query_then_fetch",
+                "indices": [
+                  "apm-nonprod*"
+                ],
+                "types": [],
+                "body": {
+                  "size": 0,
+                  "query": {
+                    "bool": {
+                      "must": [
+                        {
+                          "query_string": {
+                            "query": "context.service.name:storage-api-broker AND (context.tags.virtualEnv:qa-aus OR context.tags.virtualEnv:uat-aus OR context.tags.virutalEnv:sandbox-aus) AND (transaction.name:read* OR transaction.name:search* OR transaction.name:update* OR transaction.name:scroll*)"
+                          }
+                        },
+                        {
+                          "range": {
+                            "@timestamp": {
+                              "gte": "now-1h"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "aggs": {
+                    "groupByName": {
+                      "terms": {
+                        "field": "transaction.name.keyword",
+                        "order": {
+                          "average_transaction": "desc"
+                        }
+                      },
+                      "aggs": {
+                        "average_transaction": {
+                          "avg": {
+                            "field": "transaction.duration.us"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "condition": {
+    "script": {
+      "source": "return ctx.payload.first.aggregations.groupByName.buckets.0.average_transaction.value > ctx.metadata.threshold",
+      "lang": "painless"
+    }
+  },
+  "actions": {
+    "email_me": {
+      "email": {
+        "profile": "gmail",
+        "to": [
+          "'<joseph.nakanishi@domain>'"
+        ],
+        "subject": "Watcher Alert - APM Alert (nonprod) - storage-api-broker",
+        "body": {
+          "html": "<html><p>SOP: Please review storage-api-broker in APM for long running processes.<br />Top 5 Longest Running (times are in microseconds)<br />{{ctx.payload.first.aggregations.groupByName.buckets.0}}<br />{{ctx.payload.first.aggregations.groupByName.buckets.1}}<br />{{ctx.payload.first.aggregations.groupByName.buckets.2}}<br />{{ctx.payload.first.aggregations.groupByName.buckets.3}}<br />{{ctx.payload.first.aggregations.groupByName.buckets.4}}</p></html><br />{{ctx.metadata.link}}"
+        }
+      }
+    }
+  },
+  "metadata": {
+    "window_period": "1h",
+    "link": "https://aus-syslog/app/apm#/storage-api-broker/transactions/request?_g=(refreshInterval:(pause:!t,value:0),time:(from:now-1h,mode:quick,to:now))&kuery=context.tags.virtualEnv~3A~22qa-aus~22~20or~20context.tags.virtualEnv~3A~22uat-aus~22~20or~20context.tags.virtualEnv~3A~22sandbox-aus~22",
+    "threshold": 5000000
+  }
+}
